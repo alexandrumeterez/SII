@@ -1,0 +1,120 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{bm}
+
+\title{Complementary Filter}
+\author{Alexandru Meterez}
+\date{April 2020}
+
+\begin{document}
+
+\maketitle
+
+\section{Problem}
+Suppose we have some measurements about a car:
+\begin{itemize}
+    \item Positions: $x_0$, $x_1$ .. $x_n$
+    \item Speeds: $v_0$, $v_1$, .. $v_n$
+    \item Time: $\Delta t$
+\end{itemize}
+Unfortunately, all of them have some \textbf{noise} that we can't get rid of. Let's say we add some Gaussian noise, such that:
+\begin{itemize}
+    \item $x_i \sim \mathcal{N}(x_i^R, \sigma_x^2)$
+    \item $v_i \sim \mathcal{N}(v_i^R, \sigma_v^2)$ 
+\end{itemize}
+How can we get the best estimates $\hat{x_i}$ for the position of the vehicle?
+
+\section{Solutions}
+\subsection{Use only the positions}
+We can simply just set the position estimate equal to the measurement (pretty bad, we add all the uncertainty surrounding $x_i$):
+\begin{itemize}
+    \item $\hat{x_i} = x_i$
+\end{itemize}
+But we are ignoring the speeds.
+
+\subsection{Use only the speeds}
+If we build upon the past solution, we can also add the speeds:
+\begin{itemize}
+    \item $\hat{x_i} = \hat{x_{i-1}} + \Delta t v_{i-1}$
+    \item $\hat{x_0} = x_0$, initial condition
+\end{itemize}
+But now we're ignoring the positions. Let's combine them.
+
+\subsection{Combine positions and speeds}
+We can average the estimate obtained from the speed $\bar{x_i}$ with the position measurement from the sensor $x_i$ and get $\hat{x_i}$:
+\begin{itemize}
+    \item $\bar{x_i} = \hat{x_{i-1}} + \Delta tv_{i-1}$
+    \item $\hat{x_i} = \frac{\bar{x_i} + x_i}{2}$
+    \item $\hat{x_0} = x_0$
+\end{itemize}
+But why use arithmetic mean? We can use any weight we like for a weighted arithmetic mean.
+
+\subsection{Use a weighted mean}
+\begin{itemize}
+    \item $\bar{x_i} = \hat{x_{i-1}} + \Delta tv_{i-1}$
+    \item $\hat{x_i} = \alpha\bar{x_i} + (1-\alpha)x_i$
+    \item $\hat{x_0} = x_0, \alpha\in[0,1]$
+\end{itemize}
+This is the best estimate we have so far. However, how can we choose alpha? Well, there is still one piece of information we haven't used: \textbf{the noise of the sensors}.
+\section{Optimal solution}
+We need some equations, given $x \sim \mathcal{N}(\mu_x, \sigma_x^2)$ and $x \sim \mathcal{N}(\mu_y, \sigma_y^2)$:
+\begin{equation} \label{eq:1}
+    x+y \sim \mathcal{N}(\mu_x + \mu_y, \sigma_x^2 + \sigma_y^2)
+\end{equation} 
+\begin{equation} \label{eq:2}
+    \alpha x \sim \mathcal{N}(\alpha \mu_x, (\alpha \sigma_x)^2)
+\end{equation} 
+\begin{equation} \label{eq:3}
+    \mathcal{N}(\mu_1, \sigma_1^2) \cdot \mathcal{N}(\mu_2, \sigma_2^2) = \mathcal{N}(\frac{\mu_1 \sigma_2 + \mu_2 \sigma_1}{\sigma_1 + \sigma_2}, \frac{\sigma_1 \sigma_2}{\sigma_1 + \sigma_2})
+\end{equation}
+Observe that in equation (\ref{eq:3}), the resulting variance is \textbf{smaller than both of the component variances}.
+\subsection{Single variable}
+\begin{itemize}
+    \item $\hat{x_0} = x_0$
+    \item $\hat{\sigma_0^2} = \sigma_x^2$
+    \item $\bar{x_i} = \hat{x_{i-1}}+v_{i-1}\Delta t$
+    \item $\bar{\sigma_i^2} = \hat{\sigma_{i-1}^2}+(\Delta t\sigma_v)^2$, from (\ref{eq:1}) and (\ref{eq:2})
+    \item $\hat{x_i} = \frac{\bar{x_i}\sigma_x^2 + x_i\bar{\sigma_i^2}}{\bar{\sigma_i^2} + \sigma_x^2}$
+    \item $\hat{\sigma_i} = \frac{\bar{\sigma_i^2}\cdot\sigma_x^2}{\bar{\sigma_i^2} + \sigma_x^2}$, from (\ref{eq:3})
+\end{itemize}
+\newpage
+Now, we are no longes guessing $\alpha$. However, we can generalize this for the multivariable case.
+\subsection{Multivariable} 
+Suppose we have $\bm{X_1} \sim \mathcal{N}(\bm{\mu_1}, \bm{\Sigma_1})$ and $\bm{X_2} \sim \mathcal{N}(\bm{\mu_2}, \bm{\Sigma_2})$ and we want to combine them. From the single variable case, we get:
+\begin{equation} \label{eq:4}
+    \mu = \frac{\sigma_2^2\mu_1 + \sigma_1^2\mu_2}{\sigma_1^2 + \sigma_2^2}
+\end{equation}
+\begin{equation} \label{eq:5}
+    \sigma_2 = \frac{\sigma_1^2\sigma_2^2}{\sigma_1^2 + \sigma_2^2}
+\end{equation}
+
+which can be rewritten as
+\begin{equation} \label{eq:6}
+    \mu = \mu_1 + \frac{\sigma_1^2}{\sigma_1^2 + \sigma_2^2}(\mu_2 - \mu_1)
+\end{equation}
+\begin{equation} \label{eq:7}
+    \sigma_2 = \sigma_1^2 - \frac{\sigma_1^2}{\sigma_1^2 + \sigma_2^2}\cdot\sigma_1^2
+\end{equation}
+
+From eqs. (\ref{eq:6}) and (\ref{eq:7}) we can generalize for the multivariable case:
+
+\begin{equation}
+    \bm{\mu} = \bm{\mu_1} + \bm{\Sigma_1}(\bm{\Sigma_1} + \bm{\Sigma_2})^{-1} \cdot (\bm{\mu_2} - \bm{\mu_1})
+\end{equation}
+\begin{equation}
+    \bm{\Sigma} = \bm{\Sigma_1} - \bm{\Sigma_1}(\bm{\Sigma_1} + \bm{\Sigma_2})^{-1}\bm{\Sigma_1}
+\end{equation}
+
+Which can be furthered simplified to:
+\begin{equation}
+    \bm{K} = \bm{\Sigma_1}(\bm{\Sigma_1} + \bm{\Sigma_2})^{-1}
+\end{equation}
+\begin{equation}
+    \bm{\mu} = \bm{\mu_1} + \bm{K} \cdot (\bm{\mu_2} - \bm{\mu_1})
+\end{equation}
+\begin{equation}
+    \bm{\Sigma} = \bm{\Sigma_1} -\bm{K}\bm{\Sigma_1}
+\end{equation}
+
+\end{document}
