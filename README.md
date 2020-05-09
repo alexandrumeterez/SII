@@ -7,7 +7,7 @@ What you can find here:
 - Kalman Filter
 - Extended Kalman Filter
 - EKF for a pendulum swing with bias estimation
-- (WIP) Particle Filter
+- Particle Filter
 - (WIP) FastSLAM
 - (WIP) SLAM
 
